@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Radius system</title>
+<link rel="stylesheet" href="css/bootstrap.min.css">
+  <script src="js/jquery.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC-h_mpM0IUJKKQQDn7traYjF2jI1kZH5Q&libraries=places,geometry,drawing,places"></script>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+  <!--
+  
+  https://stackoverflow.com/questions/17622189/google-maps-dynamically-movable-and-resizable-circle-overlay-script-for-v3
+  
+  -->
+<style>
+.radius-box{
+	padding-top:150px;
+}
+.nav-tabs {
+	border: none;
+	float:left;
+
+}
+.nav-tabs .nav-link{
+	border: #000 solid 1px;
+	border-radius: 8px;
+	position: relative;
+    margin-left: -1px;
+		color: #000;
+		font-weight: bold;
+		z-index: 11;
+		padding: 15px 20px;
+}
+
+.nav-tabs .nav-link:hover, .nav-tabs .nav-link:focus,  .nav-tabs .nav-link:active{
+	border: #000 solid 1px;
+
+}
+.nav-tabs .nav-link.active {
+	
+	border: #000 solid 1px;
+	border-bottom: 0;
+	border-radius: 8px 8px 0  0;
+		color: #000;
+		z-index: 10;
+}
+.nav-tabs .nav-link.active:after {
+	position: absolute;
+	height: 5px;
+	background: #fff;
+	bottom: 0;
+	left: -1px;
+	right: -1px;
+	content: '';
+}
+.radius-wrap {
+	background: #ffa62a;
+	padding: 10px;
+	font-size: 24px;
+	color: #fff;
+	font-weight: bold;
+	text-align: center;
+}
+.add_button {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.add_button li a {
+    color: #000;
+    padding: 15px 20px;
+    font-size: 34p
+}
+</style>
+<body>
+<div class="container">
+	<div class="radius-box">
+		<div class="row">
+			<div class="col-6">
+				<label>Check Location</label>
+				<input id="checktext" type="text"  size="60" class="search-text form-control" placeholder="Check location here" >
+			</div>
+			<div class="col-6">
+				<button type="button" id="check-location" class="btn btn-primary ml-4">Check Location</button>
+			</div>
+		</div>
+		<br><br><br><br>
+		<div class="row">
+			<div class="col-2">&nbsp;</div>
+			<div class="col-4">
+				<label>Location</label>
+				<input id="searchtext" type="text"  size="60" class="search-text form-control" placeholder="Enter your search location here" >
+			</div>
+			<div class="col-2">
+				<label>Shape</label>
+				<select name="shape" id="shape" class="form-control">
+					<option value="">Please select Shape</option>
+					<option value="circle">circle</option>
+					<option value="polygon">polygon</option>
+				</select>
+			</div>
+			<div class="col-2" id="Radius_show"  style="display:none"><label>Radius</label>
+				<input id="radius" type="text" name="radius" value="5" size="60" class="form-control"  >
+			</div>
+			<div class="col-2"></div>
+		</div>
+		<div class="row">
+			<div class="col-2"></div>
+			<div class="col-10">
+				<button type="button" id="zoom-to-address" onclick="showAddress()" class="btn btn-primary ml-4">Submit</button>
+			</div>
+		</div>
+		<div class="row mt-4">
+			<div class="col-4">&nbsp;</div>
+			<div class="col-7">
+				<ul class="nav nav-tabs" id="nav-tabs">
+					<li class="nav-item">
+						<a id="radius_1" class="nav-link active" onclick="changeAddress(event)">Radius 1</a>
+					</li>
+				</ul>
+				<ul class="add_button">
+					<li>
+						<a id="tab_create" class="btn" style="border:0;"><i style="color:#9CE786" class="fa fa-plus"></i></a>
+					</li>
+				</ul>
+			</div>
+		</div>		
+		<div class="mt-2">
+			<div class="container tab-pane active">
+				<div class="row">
+					<div class="col-4">
+						<div id="radius-container"></div>						
+					</div>
+					<div class="col-8">
+						<div id="map" style="width:100%;height: 600px; "></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-group">		
+				<button id="submit_button" class="btn btn-primary ml-4">Submit</button>
+			</div>
+		</div>
+	</div>
+</div>
+	<!-- radius box end-->
+</div>
+
+<div id="radius-template" class="tab-content" style="display:none">
+	<!-- radius start-->
+	<div class="mb-5 radius-wrap">Radius <span id="rad-count">1</span> Settings</div>							
+	<div class="form-group">
+		<label for="status" class="font-weight-bold">Status</label>
+		<input type="text" class="form-control" id="status" onchange="handleInputChange(event)" name="status" placeholder="Status" required>
+	</div>
+	<div class="form-group">
+		<label for="delivery_fee" class="font-weight-bold">Delivery Fee</label>
+		<input type="text" class="form-control" id="delivery_fee" onchange="handleInputChange(event)" name="delivery_fee" placeholder="Delivery Fee" required>
+	</div>
+	<div class="form-group">
+		<label for="minimum_amount" class="font-weight-bold">Minimum Amount</label>
+		<input type="text" class="form-control" id="minimum_amount" onchange="handleInputChange(event)" name="minimum_amount" placeholder="Minimum Amount" required>
+	</div>
+	<div class="form-group">
+		<label for="free_delivery" class="font-weight-bold">Free Delivery</label>
+		<input type="text" class="form-control" id="free_delivery" onchange="handleInputChange(event)" name="free_delivery" placeholder="Free Delivery" required>
+	</div>
+
+	<div class="form-group">
+		<label for="delivery_fee_settings" class="font-weight-bold">Delivery Fee Settings</label>
+		<input type="text" class="form-control" id="delivery_fee_settings" onchange="handleInputChange(event)" name="delivery_fee_settings" placeholder="Delivery Fee Settings" required>
+		
+	</div>
+	
+	<div class="form-group">
+		<label for="delivery_ready_time" class="font-weight-bold">Delivery Ready Time</label>
+		<input type="text" class="form-control" id="delivery_ready_time" onchange="handleInputChange(event)" name="delivery_ready_time" placeholder="Delivery Ready Time" required>
+	</div>
+	<div class="form-group">
+		<label for="available_times" class="font-weight-bold">Available Times</label>
+		<input type="text" class="form-control" id="available_times" onchange="handleInputChange(event)" name="available_times" placeholder="Available Times" required>
+		<input type="" id="map_lng"  name="map_lng">
+		<input type="" id="map_lat"  name="map_lat">
+	</div>
+	<!-- radius ednd-->
+</div>
+
+<script>
+var targetValue = 1;
+var radiusArray = [];
+var counter = 1;
+
+radiusArray[0] = [];
+
+function AddRadiusForm(isShow)
+{
+	radiusArray[counter - 1] = [];
+
+	str = '<div id="radius' + counter + '">';	
+	str += $('#radius-template').html();
+	str += '</div>';
+	$('#radius-container').append(str);
+
+	$('#radius' + counter + ' #rad-count').text(counter);
+	if (isShow == false)
+		$('#radius' + counter).hide();
+}
+
+$(document).ready(function () {
+	AddRadiusForm(true);
+
+	$('#shape').on('change', function() {
+		var currentTool =  document.getElementById('shape').value;
+		if( currentTool =="circle")
+		{ 
+			$("#Radius_show").show();
+		}
+		if ( currentTool =="polygon") 
+		{
+			$("#Radius_show").hide();
+		}
+	});
+
+	$("#tab_create").click(function() {
+		$("ul#nav-tabs").append("<li class='nav-item'><a" + ` id='radius_${++counter}'` + "class='nav-link' onClick='changeAddress(event)'>Radius <span id='rad-coun'>"+(counter)+"</span></a></li>");	
+		AddRadiusForm(false);
+	});
+
+	$("#submit_button").click(function() {
+		console.log(shapes_type);
+		for (var i = 0; i < radiusArray.length; i ++) {
+			var path = [], radius = 0;
+
+			if (shapes_type[i] == 'circle')
+			{
+				radius = shapes[i].getRadius();
+			}
+
+			if (shapes_type[i] == 'polygon')
+			{
+				var polygonBounds = shapes[i].getPath();
+				for (var j = 0; j < polygonBounds.length; j ++) {
+					path[j*2] = polygonBounds.getAt(j).lat();
+					path[j*2+1] = polygonBounds.getAt(j).lng();
+				}
+				path = JSON.stringify(path);
+			}
+
+			$.ajax({
+				type:"POST",
+				url:"db.php",
+				data: {
+					status : radiusArray[i]['status'],
+					delivery_fee : radiusArray[i]['delivery_fee'],
+					minimum_amount : radiusArray[i]['minimum_amount'],
+					free_delivery : radiusArray[i]['free_delivery'],
+					delivery_fee_settings : radiusArray[i]['delivery_fee_settings'],
+					delivery_ready_time : radiusArray[i]['delivery_ready_time'],
+					available_times : radiusArray[i]['available_times'],
+					radius : radius,
+					shape_type : shapes_type[i],
+					path : path,
+					x : radiusArray[i]['map_lat'],
+					y : radiusArray[i]['map_lng'],
+				},
+				success: function(data) {
+
+					alert('The Radius data is saved to database successfully!')
+				},
+				error: function(err) {
+					console.log(err);
+				}
+			});
+		}		
+	});
+
+	//////////////// check location ///////////////////////
+
+	
+	// $('#checktext').on('change', function() {
+	//   var checkText =  document.getElementById('checktext').value;
+	//   showAddressGoogle1(checkText);
+	// });
+
+	$("#check-location").click(function() {
+		address =  document.getElementById('checktext').value;
+		var radius;
+		if(typeof address != "undefined" && address)
+		{
+			getLocation(address, function(response, status) {
+				// console.log('address in check 1 +++++++', address);
+				if (!response || status != google.maps.GeocoderStatus.OK) {
+					alert(address + " not found");
+				} else {
+					var l = response[0];  //choose first location
+					point = l.geometry.location;
+					lng = point.lng();
+					lat = point.lat();
+					$.ajax({
+						type:"POST",  
+						url:"getshapes.php",
+						data: { lng: lng, lat: lat},
+						success: function(data) {
+							let result;
+							data = JSON.parse(data);
+
+							for (i = 0; i < data.length; i++) {
+								let row = data[i];
+
+								if (row['shape_type'] == 'circle')
+								{
+									let y = parseFloat(row.y);
+									let x = parseFloat(row.x);
+									if (parseFloat(row.radius) > distance(lat, lng, y, x, "K") * 1000) {
+										alert("The restaurant are in! Please look at the console in the browerse");
+										result = row;
+										break;
+									}
+								}
+								if (row['shape_type'] == 'polygon')
+								{
+									var polygonCoords = [];
+
+									for (j = 0; j < row['path'].length; j ++)
+										polygonCoords.push({lat: parseFloat(row['path'][j][0]), lng: parseFloat(row['path'][j][1])});
+									var polygon = new google.maps.Polygon({paths: polygonCoords});
+									
+									// console.log(polygonCoords);
+									
+									if (google.maps.geometry.poly.containsLocation(new google.maps.LatLng(point.lat(), point.lng()), polygon) == true)
+									{
+										alert("The restaurant are in! Please look at the console in the browerse");
+										result = row;
+										break;
+									}
+								}
+							}
+							if (i == data.length) {
+								alert("no matched data");
+								return
+							}
+							console.log("====== check result =====", result);
+							return result;  /// that is the settings of the Radius
+						}
+					});
+				}
+			});
+		}
+	});
+});
+
+// function showAddressGoogle1()
+// {
+//   address =  document.getElementById('checktext').value;
+// 	var radius;
+// 	if(typeof address != "undefined" && address)
+// 	{
+// 		getLocation(address, function(response, status) {
+//       console.log('address in check 1 +++++++', address);
+// 			if (!response || status != google.maps.GeocoderStatus.OK) {
+// 				alert(address + " not found");
+// 			} else {
+//         var l = response[0];  //choose first location
+//         point = l.geometry.location;
+//         lng = point.lng();
+//         lat = point.lat();
+//         console.log('lat in check 1 after +++++++', lng)
+//         console.log('lat in check 1 after +++++++', lat)
+
+//         localStorage.setItem("qicharge-lng", lng);
+//         localStorage.setItem("qicharge-lat", lat);
+//         // showAddressPoint(point);
+//         return;
+// 			}
+// 		});
+//   }
+  
+// }
+
+
+function distance(lat1, lon1, lat2, lon2, unit) {
+	if ((lat1 == lat2) && (lon1 == lon2)) {
+		return 0;
+	}
+	else {
+		var radlat1 = Math.PI * lat1/180;
+		var radlat2 = Math.PI * lat2/180;
+		var theta = lon1-lon2;
+		var radtheta = Math.PI * theta/180;
+		var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+		if (dist > 1) {
+			dist = 1;
+		}
+		dist = Math.acos(dist);
+		dist = dist * 180/Math.PI;
+		dist = dist * 60 * 1.1515;
+		if (unit=="K") { dist = dist * 1.609344 }
+		if (unit=="N") { dist = dist * 0.8684 }
+		return dist;
+	}
+}
+
+var METERS_PER_MILE = 1609.34;
+var shapes = [], shapes_type = [];
+var myCenter = new google.maps.LatLng(56.1304, -106.3468);
+var options = {
+  center: myCenter,
+  zoom: 1,
+  scrollwheel: true,
+  draggable: true,
+  mapTypeId: google.maps.MapTypeId.ROADMAP
+};
+
+var map = new google.maps.Map(document.getElementById("map"), options);
+geocoder = new google.maps.Geocoder();
+var input = document.getElementById('searchtext');
+var searchBox = new google.maps.places.SearchBox(input);
+
+var input1 = document.getElementById('checktext');
+var searchBox1 = new google.maps.places.SearchBox(input1);
+
+function showAddress() {
+	var radius;
+	var address = document.getElementById('searchtext').value;
+	
+	radius = METERS_PER_MILE * document.getElementById('radius').value;
+	
+	alert(radius);
+	
+	/// saving each of radius address and radius to radiusArray
+	// let item = {}
+	// item.address = address;
+	// item.radius = radius;
+	// radiusArray[parseInt(targetValue) - 1] = item;
+
+	// var currentTool =  document.getElementById('shape').value;
+	// if(typeof GeocodeService != "undefined")
+	// {
+	// 	if(!geocodeService)
+	// 	{
+	// 		try { geocodeService = new GeocodeService();}
+	// 		catch(error) { geocodeService = Object.create(GeocodeService.prototype);}//for IE
+	// 	}
+		
+	// 	var currentTool =  document.getElementById('shape').value;
+		
+	// 	geocodeService.geocode(null, address, "", function(location_array, source) {
+	// 		if (typeof location_array != "undefined" && typeof location_array.lat != "undefined") {
+	// 			var point = new google.maps.LatLng(location_array.lat, location_array.lng);
+	// 			showAddressPoint(point);
+	// 		}
+	// 		else showAddressGoogle(address);
+	// 	});
+	// }
+	// else 
+	showAddressGoogle(address);
+}
+
+function handleInputChange(event) {
+	let id = event.target.id;
+	let item = {};
+	radiusArray[parseInt(targetValue) - 1][id] = event.target.value;
+	console.log(radiusArray, targetValue);
+}
+
+function showAddressGoogle(address)
+{
+	var radius;
+	if(typeof address != "undefined" && address)
+	{
+    	console.log("#########+++++", address);
+		getLocation(address, function(response, status) {
+			if (!response || status != google.maps.GeocoderStatus.OK) {
+				alert(address + " not found");
+			} else {
+				// var currentTool =  document.getElementById('shape').value;
+				
+				var l = response[0];  //choose first location
+				point = l.geometry.location;				 
+				showAddressPoint(point);
+
+				// if(currentTool == "circle") {
+				// 	var l = response[0];  //choose first location
+				// 	point = l.geometry.location;
+				// 	lng = point.lng();
+				// 	lat = point.lat();
+				// 	localStorage.setItem("qicharge-lng", lng);
+				// 	localStorage.setItem("qicharge-lat", lat);
+				// 	showAddressPoint(point);
+				// }
+				
+				// if(currentTool == "polygon") {	
+				// 	showAddressPoint(response);
+				// }
+			}
+		});
+	}
+}
+
+// check if the location is in one of the radius array, and return radius
+function getRadius() {
+	let address = document.getElementById('searchtext').value;
+	let lng;
+	let lat;
+	if(typeof address != "undefined" && address)
+	{
+		getLocation(address, function(response, status) {
+			if (!response || status != google.maps.GeocoderStatus.OK) {
+				alert(address + " not found");
+			} else {
+				var currentTool =  document.getElementById('shape').value;
+				if(currentTool == "circle") {
+					var l = response[0];  //choose first location
+					point = l.geometry.location;
+					lng = point.lng();
+					lat = point.lat();
+					localStorage.setItem("qicharge-lng", lng);
+					localStorage.setItem("qicharge-lat", lat);
+				}
+				if(currentTool == "polygon") {	
+					showAddressPoint(response);
+				}
+			}
+		});
+  	}
+}
+
+function getLocation(address, callback){
+	if (geocoder) {
+		geocoder.geocode({ 'address': address}, callback);
+	}
+	else {
+		console.error("Geocoder is null.")
+	}
+}
+
+function showAddressPoint(address){
+	console.log("the current address ++++", address)
+	var currentTool = document.getElementById('shape').value;
+	// save map_lng and map_lat in each of radius at the first time
+	
+	radiusArray[parseInt(targetValue) - 1].map_lng = address.lng();
+  	radiusArray[parseInt(targetValue) - 1].map_lat = address.lat();
+
+	$('#radius' + parseInt(targetValue) + ' #map_lng').val(address.lng());
+	$('#radius' + parseInt(targetValue) + ' #map_lat').val(address.lat());
+
+	if(currentTool == "circle") {
+		if (shapes_type[parseInt(targetValue) - 1] == 'circle' && shapes[parseInt(targetValue) - 1]){
+			updateDrawingOptions(shapes[parseInt(targetValue) - 1], address , {editable:true}); //,draggable:true
+			return;
+		}
+		
+		if (shapes[parseInt(targetValue) - 1])
+			shapes[parseInt(targetValue) - 1].setMap(null);
+
+		shapes_type[parseInt(targetValue) - 1] = 'circle';
+
+    	rad_vaue =document.getElementById('radius').value;
+		radius = METERS_PER_MILE * document.getElementById('radius').value;
+
+		options['map']=map;
+		options['center']=address;
+		options['radius']=radius;
+		options['strokeColor']='#AA1A6B';
+		options['strokeOpacity']=0.6;
+		options['fillColor']='#AA1A6B';
+		options['editable']=true;
+		options['draggable']=false;
+		var circle = new google.maps.Circle(options);
+		shapes[parseInt(targetValue) - 1] = circle;
+		map.setZoom(5);
+		map.setCenter(address);
+		map.fitBounds(circle.getBounds());
+
+		var marker = new google.maps.Marker({
+			position: address,
+			map: map
+		});
+	}
+	
+	if(currentTool == "polygon") {
+		if (shapes_type[parseInt(targetValue) - 1] == 'polygon' && shapes[parseInt(targetValue) - 1]){
+			updateDrawingOptions(shapes[parseInt(targetValue) - 1], address , {editable:true}); //,draggable:true
+			return;
+		}
+
+		if (shapes[parseInt(targetValue) - 1])
+			shapes[parseInt(targetValue) - 1].setMap(null);
+
+		shapes_type[parseInt(targetValue) - 1] = 'polygon';
+
+		// var startLoc = new google.maps.LatLng(address[0].geometry.location.lat(), address[0].geometry.location.lng());
+		map.setZoom(10);
+		map.setCenter(address);
+		polygon = new google.maps.Polygon({
+			strokeColor: "#3DC371",
+			center:address,
+			strokeOpacity: 0.8,
+			strokeWeight: 2,
+			fillColor: "#3DC371",
+			fillOpacity: 0.35,
+			map: map,
+			editable: true,
+			draggable: false,
+		  	paths: getDefaultPolygon(address)
+    	});
+
+	  	var marker = new google.maps.Marker({
+			position: address,
+			map: map
+		});
+
+		function getDefaultPolygon(center) {
+			var span = map.getBounds().toSpan();
+
+			return [
+				{ lat: center.lat() + span.lat() / 1, lng: center.lng() - span.lng() / 4 },
+				{ lat: center.lat() - span.lat() / 3, lng: center.lng() - span.lng() / 3 },
+				{ lat: center.lat() + span.lat() / 3, lng: center.lng() + span.lng() / 3 }
+			];
+		}
+
+		shapes[parseInt(targetValue) - 1] = polygon;
+
+    	// console.log(getDefaultPolygon(startLoc));
+    	// console.log([address[0].geometry.location.lat(), address[0].geometry.location.lng()]);
+	}
+}
+
+function changeAddress(e) {
+	console.log("+++++", counter)
+	var previousId = targetValue;
+
+	targetValue = e.target.id.split('_')[1];
+
+	$("#radius_" + previousId).removeClass("active");
+	$("#radius_" + targetValue).addClass("active");
+	// var address = document.getElementById('searchtext').value;
+	// radius = METERS_PER_MILE * document.getElementById('radius').value;
+	
+	// set the fields in settings input
+	$("#radius" + previousId).hide();
+	$("#radius" + targetValue).show();
+	
+	if (shapes[parseInt(previousId) - 1]){
+		shapes[parseInt(previousId) - 1].setOptions({editable:false}); //,draggable:true
+	}
+
+	if (shapes[parseInt(targetValue) - 1]){
+		shapes[parseInt(targetValue) - 1].setOptions({editable:true}); //,draggable:true
+	}
+	
+	// getLocation(radiusArray[parseInt(targetValue) - 1].address, function(response, status) {
+	// 	if (!response || status != google.maps.GeocoderStatus.OK) {
+	// 	// alert(address + " not found");
+	// 	} else {
+	// 		var currentTool =  document.getElementById('shape').value;
+				
+	// 		if(currentTool == "circle") {
+	// 			var l = response[0];  //choose first location
+	// 			point = l.geometry.location;
+	// 			updateDrawingOptions(current_shape, point, {editable:true,draggable:true}, radiusArray[parseInt(targetValue) - 1].radius);
+	// 		}
+			
+	// 		if(currentTool == "polygon") {
+	// 			updateDrawingOptions(current_shape, response, {editable:true,draggable:true});
+	// 		}
+	// 	}
+	// });
+}
+
+function updateDrawingOptions(shape, address, options, radius)
+{
+	if(!radius){
+    	radius = METERS_PER_MILE * document.getElementById('radius').value;
+  	}
+
+	// save map_lng and map_lat in each of radius
+	radiusArray[parseInt(targetValue) - 1].map_lng = address.lng();
+	radiusArray[parseInt(targetValue) - 1].map_lat = address.lat();
+
+	options['center']=address;
+	options['radius']=radius;
+	shape.setOptions(options);
+}
+
+
+</script>
+</body>
+</html>
